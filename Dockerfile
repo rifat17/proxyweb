@@ -14,6 +14,8 @@ COPY . /app
 RUN cp /app/misc/entry.sh /app/
 RUN chmod 755 /app/entry.sh 
 
+
+#  Install MySQL-client
 RUN apt-get update -y && \
     apt-get install -y \
         wget \
@@ -38,7 +40,8 @@ RUN apt-get update -y && \
         mysql-client_8.4.5-1debian12_amd64.deb && \
     rm -f *.deb && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb
 
 ENTRYPOINT [ "./entry.sh" ]
 CMD [ "app.py" ]
+

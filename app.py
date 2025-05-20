@@ -14,12 +14,13 @@ this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 __author__ = "Miklos Mukka Szel"
-__contact__ = "miklos.szel@edmodo.com"
+__contact__ = "email@miklos-szel.com"
 __license__ = "GPLv3"
 
 import logging
 from collections import defaultdict
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, url_for, flash, redirect
+from functools import wraps
 import re
 import mdb
 
@@ -36,12 +37,43 @@ for key in flask_custom_config['flask']:
     app.config[key] = flask_custom_config['flask'][key]
 
 
-# mdb.logging.debug("###########section: {}".format(section))
+mdb.logging.debug(flask_custom_config)
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            flash('You must be logged in to access this page.', 'warning')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    session.clear()
+    message=""
+    admin_user = mdb.get_config(config)['auth']['admin_user']
+    admin_password = mdb.get_config(config)['auth']['admin_password']
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if admin_user == username and admin_password == password:
+            session['logged_in'] = True
+            return redirect(url_for('render_list_dbs'))
+        message="Invalid credentials!"
+    return render_template("login.html", message=message)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 
 @app.route('/')
+@login_required
 def render_list_dbs():
     try:
-        session.clear()
         server = mdb.get_config(config)['global']['default_server']
         session['history'] = []
         session['server'] = server
@@ -56,6 +88,7 @@ def render_list_dbs():
 
 @app.route('/<server>/')
 @app.route('/<server>/<database>/<table>/')
+@login_required
 def render_show_table_content(server, database="main", table="global_variables"):
     try:
         # refresh the tablelist if changing to a new server
@@ -75,6 +108,7 @@ def render_show_table_content(server, database="main", table="global_variables")
         raise ValueError(e)
 
 @app.route('/<server>/<database>/<table>/sql/', methods=['GET', 'POST'])
+@login_required
 def render_change(server, database, table):
     try:
         error = ""
@@ -104,6 +138,7 @@ def render_change(server, database, table):
         raise ValueError(e)
 
 @app.route('/<server>/adhoc/')
+@login_required
 def adhoc_report(server):
     try:
 
@@ -114,6 +149,7 @@ def adhoc_report(server):
 
 
 @app.route('/settings/<action>/', methods=['GET', 'POST'])
+@login_required
 def render_settings(action):
     try:
         config_file_content = ""

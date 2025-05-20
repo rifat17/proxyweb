@@ -1,8 +1,9 @@
 # ProxyWeb
 Open Source Web UI for [ProxySQL](https://proxysql.com/)
 
-[!WARNING]
-Basic authentication is turned on by default, default creds are admin/admin42, can be changed by editing the config file.
+> [!WARNING]  
+> Basic authentication is turned on by default in the new latest version, default creds are admin/admin42, can be changed by editing the config file.
+
 
 ![ProxyWeb ui](misc/images/ProxyWeb_main.jpg)
 

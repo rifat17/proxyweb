@@ -1,4 +1,5 @@
-FROM python:3.9-slim-buster
+FROM python:3.14.0b1-bookworm
+LABEL maintainer="email@miklos-szel.com"
 
 LABEL maintainer="miklos.szel@edmodo.com"
 

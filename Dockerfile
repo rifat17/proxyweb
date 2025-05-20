@@ -1,7 +1,8 @@
 FROM python:3.14.0b1-bookworm
 LABEL maintainer="email@miklos-szel.com"
 
-LABEL maintainer="miklos.szel@edmodo.com"
+# Set non-interactive frontend
+ENV DEBIAN_FRONTEND=noninteractive
 
 COPY ./requirements.txt /app/requirements.txt
 

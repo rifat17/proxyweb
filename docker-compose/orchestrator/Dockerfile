@@ -1,6 +1,6 @@
 FROM ubuntu:20.04
 
-LABEL maintainer="miklos.szel@edmodo.com"
+LABEL maintainer="email@miklos-szel.com"
 
 
 RUN apt-get update -y && \

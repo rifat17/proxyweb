@@ -14,7 +14,7 @@ this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 __author__ = "Miklos Mukka Szel"
-__contact__ = "miklos.szel@edmodo.com"
+__contact__ = "email@miklos-szel.com"
 __license__ = "GPLv3"
 
 import os

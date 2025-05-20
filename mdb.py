@@ -14,7 +14,7 @@ this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 __author__ = "Miklos Mukka Szel"
-__contact__ = "miklos.szel@edmodo.com"
+__contact__ = "email@miklos-szel.com"
 __license__ = "GPLv3"
 
 
@@ -25,7 +25,7 @@ import os
 import subprocess
 
 
-logging.basicConfig(level=logging.WARN, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 sql_get_databases = "show databases"
 sql_show_table_content = "select * from %s.%s order by 1;"

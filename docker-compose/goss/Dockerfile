@@ -1,5 +1,5 @@
 FROM alpine:3.10
-LABEL maintainer="miklos.szel@edmodo.com"
+LABEL maintainer="email@miklos-szel.com"
 
 ENV GOSS_VER v0.3.16
 ENV PATH=/goss:$PATH

@@ -29,7 +29,7 @@ docker run -h proxyweb --name proxyweb --network="host" -d proxyweb/proxyweb:lat
 ```
 ## Install it as a systemd service (Ubuntu)
 ```
-git clone https://github.com/edmodo/proxyweb
+git clone https://github.com/miklos-szel/proxyweb
 cd proxyweb
 make install
 ```
@@ -59,7 +59,7 @@ docker run -h proxyweb --name proxyweb -p 5000:5000 -d proxyweb/proxyweb:latest
 
 or
 
-git clone https://github.com/edmodo/proxyweb.git
+git clone https://github.com/miklos-szel/proxyweb.git
 cd proxyweb
 make  proxyweb-run
 ```
@@ -75,13 +75,13 @@ section.
 Setting up a fully functional MySQL/ProxySQL/ProxyWeb/Orchestrator sandbox is super-easy with docker-compose:
 
 ```
-git clone https://github.com/edmodo/proxyweb.git
+git clone https://github.com/miklos-szel/proxyweb.git
 cd proxyweb/docker-compose
 make up
 
 or
 
-git clone https://github.com/edmodo/proxyweb.git
+git clone https://github.com/miklos-szel/proxyweb.git
 cd proxyweb
 make  compose-up
 ```

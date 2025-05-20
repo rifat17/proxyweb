@@ -90,6 +90,9 @@ misc:
         "info": "This helps identifying the schemas getting the most writes",
         "sql": "SELECT sum(count_star) as sum_count_star, schemaname, sum(sum_time) as time_spent   FROM stats_mysql_query_digest where digest_text like 'INSERT%' or digest_text like 'DELETE%' or digest_text like 'UPDATE%' group by schemaname order by time_spent desc;" }
 
+auth:
+  admin_user: "admin"
+  admin_password: "admin42"
 
 flask:
   SECRET_KEY: "12345678901234567890"

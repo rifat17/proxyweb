@@ -15,11 +15,30 @@ RUN cp /app/misc/entry.sh /app/
 RUN chmod 755 /app/entry.sh 
 
 RUN apt-get update -y && \
-    apt-get install  wget   ca-certificates  debsums libncurses6 libatomic1  libaio1  libnuma1 mysql-common  -y
-RUN wget https://downloads.percona.com/downloads/Percona-Server-5.7/Percona-Server-5.7.36-39/binary/debian/buster/x86_64/percona-server-common-5.7_5.7.36-39-1.buster_amd64.deb -O /tmp/percona-server-common-5.7_5.7.36-39-1.buster_amd64.deb
-RUN wget https://downloads.percona.com/downloads/Percona-Server-5.7/Percona-Server-5.7.36-39/binary/debian/buster/x86_64/percona-server-client-5.7_5.7.36-39-1.buster_amd64.deb -O /tmp/percona-server-client-5.7_5.7.36-39-1.buster_amd64.deb
-RUN dpkg -i /tmp/percona-server-common-5.7_5.7.36-39-1.buster_amd64.deb /tmp/percona-server-client-5.7_5.7.36-39-1.buster_amd64.deb
-RUN rm -rf /var/lib/apt/lists/* && rm /tmp/*.deb
+    apt-get install -y \
+        wget \
+        ca-certificates \
+        debsums \
+        libncurses6 \
+        libatomic1 \
+        libaio1 \
+        libnuma1 \
+        gnupg \
+        lsb-release && \
+    wget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-common_8.4.5-1debian12_amd64.deb && \
+    wget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-client-plugins_8.4.5-1debian12_amd64.deb && \
+    wget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-client-core_8.4.5-1debian12_amd64.deb && \
+    wget https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-community-client_8.4.5-1debian12_amd64.deb && \
+    wget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-client_8.4.5-1debian12_amd64.deb && \
+    dpkg -i \
+        mysql-common_8.4.5-1debian12_amd64.deb \
+        mysql-community-client-core_8.4.5-1debian12_amd64.deb \
+        mysql-community-client-plugins_8.4.5-1debian12_amd64.deb \
+        mysql-community-client_8.4.5-1debian12_amd64.deb \
+        mysql-client_8.4.5-1debian12_amd64.deb && \
+    rm -f *.deb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb \
 
 ENTRYPOINT [ "./entry.sh" ]
 CMD [ "app.py" ]

@@ -19,7 +19,8 @@ Open Source Web UI for [ProxySQL](https://proxysql.com/)
 - Narrow-down content search
 - Paginate content
 - Command history and SQL dropdown menu 
-- Adhoc MySQL queries 
+- Adhoc MySQL queries
+- Basic authentication
 
 
 
@@ -366,7 +367,6 @@ A random `SECRET_KEY` is generated when using the dockerized ProxyWeb or when ru
 
 ### Features on the roadmap
 - ability to edit tables
-- authentication
 - more advanced input validation
 ---
 ### Credits:

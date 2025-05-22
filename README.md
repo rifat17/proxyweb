@@ -2,7 +2,10 @@
 Open Source Web UI for [ProxySQL](https://proxysql.com/)
 
 > [!WARNING]  
-> Basic authentication is turned on by default in the latest version, default creds are admin/admin42, can be changed by editing the config file.
+> Basic authentication is turned on by default in the latest version, default credentials are as follows:
+> username: admin
+> password: admin42
+> These can be changed by editing the config file.
 
 
 ![ProxyWeb ui](misc/images/ProxyWeb_main.jpg)
@@ -21,7 +24,6 @@ Open Source Web UI for [ProxySQL](https://proxysql.com/)
 - Command history and SQL dropdown menu 
 - Adhoc MySQL queries
 - Basic authentication
-
 
 
 # Setup
@@ -73,23 +75,14 @@ section.
 
 ---
 
-
-
-
 ### Features on the roadmap
 - ability to edit tables
-- more advanced input validation
+- more sophisticated input validation
+
 ---
 ### Credits:
 
-Thanks for Rene Cannao and the SysOwn team for the wonderful [ProxySQL](https://proxysql.com/).
+- Thanks for René Cannaò and the SysOwn team  [ProxySQL](https://proxysql.com/).
+- Tripolszky 'Tripy' Zsolt
 
-ProxyWeb is using the following projects:
-- Percona Server 5.7
-- Bootstrap 4.4.1
-- Mdbootstrap 4.16
-- Font Awesome 5.8.2
-- Google Fonts
-- goss
-- sysbench 
 

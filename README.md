@@ -1,12 +1,6 @@
 # ProxyWeb
 Open Source Web UI for [ProxySQL](https://proxysql.com/)
 
-> [!WARNING]  
-> Basic authentication is turned on by default in the latest version, default credentials are as follows:
-> username: admin
-> password: admin42
-> These can be changed by editing the config file.
-
 ## Table of Contents
 
 - [Introduction](#introduction)
@@ -59,6 +53,7 @@ make install
 Visit  [http://ip_of_the_host:5000/setting/edit](http://ip_of_the_host:5000/setting/edit) first and adjust the credentials if needed.
 The default connection is the local one with the default credentials.
 
+
 ## Install ProxyWeb to work with remote ProxySQL servers
 ### Configure ProxySQL for remote admin access
 
@@ -83,6 +78,16 @@ docker run -h proxyweb --name proxyweb -p 5000:5000 -d proxyweb/proxyweb:latest
 
 Visit [http://ip_of_the_host:5000/setting/edit](http://ip_of_the_host:5000/setting/edit) first and edit the `servers`
 section.
+
+> [!NOTE]  
+> Basic authentication is turned on by default in the latest version, default credentials are as follows:
+>
+> - username: admin 
+>
+> - password: admin42
+> 
+> These can be changed by editing the config file.
+
 
 ---
 

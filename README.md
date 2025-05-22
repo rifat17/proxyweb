@@ -7,11 +7,22 @@ Open Source Web UI for [ProxySQL](https://proxysql.com/)
 > password: admin42
 > These can be changed by editing the config file.
 
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Features](#features)
+- [Setup](#setup)
+  - [Install ProxyWeb next to ProxySQL](#install-proxyweb-next-to-proxysql)
+  - [Install it as a systemd service (Ubuntu)](#install-it-as-a-systemd-service-ubuntu)
+  - [Install ProxyWeb to work with remote ProxySQL servers](#install-proxyweb-to-work-with-remote-proxysql-servers)
+
 
 ![ProxyWeb ui](misc/images/ProxyWeb_main.jpg)
 
+## Introduction
+ProxyWeb is a modern, lightweight web-based interface for ProxySQL, the popular high-performance MySQL proxy. Designed for simplicity and full control, ProxyWeb allows administrators to manage ProxySQL servers, users, query rules, and variables—all through an intuitive web UI.
 
-**Current features include**:
+## Features:
 - Clean and responsive design
 - [Multi-server support](misc/images/ProxyWeb_servers.jpg)
 - [Configurable reporting](misc/images/ProxyWeb_report.jpg)
@@ -27,6 +38,12 @@ Open Source Web UI for [ProxySQL](https://proxysql.com/)
 
 
 # Setup
+
+## Prerequisites
+
+- Docker installed on your system
+- Git installed
+- Basic understanding of ProxySQL and MySQL
 
 ## Install ProxyWeb next to ProxySQL
 With Docker:
@@ -62,12 +79,6 @@ After this we can connect to the ProxySQL with:
 Run:
 ```
 docker run -h proxyweb --name proxyweb -p 5000:5000 -d proxyweb/proxyweb:latest
-
-or
-
-git clone https://github.com/miklos-szel/proxyweb.git
-cd proxyweb
-make  proxyweb-run
 ```
 
 Visit [http://ip_of_the_host:5000/setting/edit](http://ip_of_the_host:5000/setting/edit) first and edit the `servers`
@@ -77,7 +88,7 @@ section.
 
 ### Features on the roadmap
 - ability to edit tables
-- more sophisticated input validation
+- better input validation
 
 ---
 ### Credits:

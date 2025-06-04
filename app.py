@@ -103,6 +103,7 @@ def render_show_table_content(server, database="main", table="global_variables")
         session['misc'] = mdb.get_config(config)['misc']
         session['read_only'] = mdb.get_read_only(server)
         content = mdb.get_table_content(db, server, database, table)
+        process_table_content(table,content)
         return render_template("show_table_info.html", content=content)
     except Exception as e:
         raise ValueError(e)

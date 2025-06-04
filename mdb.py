@@ -21,9 +21,8 @@ __license__ = "GPLv3"
 import mysql.connector
 import logging
 import yaml
-import os
 import subprocess
-
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -116,6 +115,41 @@ def get_table_content(db, server, database, table):
     except (mysql.connector.Error, mysql.connector.Warning) as e:
         db['cnf']['servers'][server]['conn'].close()
         raise ValueError(e)
+
+def process_table_content(table, content):
+    """
+    Processes content rows by converting time-based fields to UTC datetime strings.
+    """
+    # Define time-based fields and their units
+    time_fields = {
+        'first_seen': 's',
+        'last_seen': 's',
+        'time_start_us': 'us',
+        'success_time_us': 'us'
+    }
+
+    # Get indices for the target columns
+    col_names = content.get('column_names', [])
+    field_indices = {field: idx for field, unit in time_fields.items() if field in col_names for idx, name in enumerate(col_names) if name == field}
+
+    if field_indices:
+        new_rows = []
+        for row in content.get('rows', []):
+            row = list(row)  # Convert tuple to list for mutation
+            for field, idx in field_indices.items():
+                try:
+                    value = int(row[idx])
+                    if time_fields[field] == 'us':
+                        # Convert microseconds to seconds
+                        value /= 1_000_000
+                    row[idx] = datetime.utcfromtimestamp(value).strftime('%Y-%m-%d %H:%M:%S')
+                except (ValueError, TypeError, OverflowError):
+                    # Leave the value as is if it's invalid
+                    pass
+            new_rows.append(tuple(row))  # Convert back to tuple
+        content['rows'] = new_rows
+
+    return content
 
 def execute_adhoc_query(db, server, sql):
     '''returns with a dict with two keys "column_names" = list and  rows = tuples '''

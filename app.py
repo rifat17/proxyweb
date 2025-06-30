@@ -115,7 +115,15 @@ def render_change(server, database, table):
         error = ""
         message = ""
         ret = ""
-        session['sql'] = request.form["sql"]
+        
+        # Validate SQL input
+        raw_sql = request.form.get("sql", "").strip()
+        if not raw_sql:
+            error = "SQL query cannot be empty"
+            content = mdb.get_table_content(db, server, database, table)
+            return render_template("show_table_info.html", content=content, error=error)
+        
+        session['sql'] = raw_sql
 
 
         mdb.logging.debug(session['history'])

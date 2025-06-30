@@ -28,7 +28,14 @@ ProxyWeb is a modern, lightweight web-based interface for ProxySQL, the popular 
 - Paginate content
 - Command history and SQL dropdown menu 
 - Adhoc MySQL queries
-- Basic authentication
+- **Enhanced Security Features**:
+  - SQL injection protection
+  - Input validation and sanitization
+  - Dangerous operation blocking
+  - Secure authentication
+- **Environment Variable Configuration**
+- **Docker Health Checks**
+- **Improved Error Handling**
 
 
 # Setup
@@ -40,9 +47,28 @@ ProxyWeb is a modern, lightweight web-based interface for ProxySQL, the popular 
 - Basic understanding of ProxySQL and MySQL
 
 ## Install ProxyWeb next to ProxySQL
-With Docker:
-```
+
+### Quick Start with Docker:
+```bash
 docker run -h proxyweb --name proxyweb --network="host" -d proxyweb/proxyweb:latest
+```
+
+### Secure Installation with Environment Variables:
+```bash
+# Create environment file
+cp .env.example .env
+# Edit .env with your credentials
+
+# Run with custom configuration
+docker run -h proxyweb --name proxyweb --network="host" \
+  -e PROXYSQL_PASSWORD="your_secure_password" \
+  -e ADMIN_PASSWORD="your_admin_password" \
+  -e SECRET_KEY="your_random_secret_key" \
+  -d proxyweb/proxyweb:latest
+
+# Or use environment file
+docker run -h proxyweb --name proxyweb --network="host" \
+  --env-file .env -d proxyweb/proxyweb:latest
 ```
 ## Install it as a systemd service (Ubuntu)
 ```
@@ -79,21 +105,56 @@ docker run -h proxyweb --name proxyweb -p 5000:5000 -d proxyweb/proxyweb:latest
 Visit [http://ip_of_the_host:5000/setting/edit](http://ip_of_the_host:5000/setting/edit) first and edit the `servers`
 section.
 
-> [!NOTE]  
-> Basic authentication is turned on by default in the latest version, default credentials are as follows:
->
-> - username: admin 
->
-> - password: admin42
-> 
-> These can be changed by editing the config file.
+## Environment Variables
 
+ProxyWeb supports configuration via environment variables for secure deployment:
+
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `PROXYSQL_HOST` | ProxySQL server hostname | `host.docker.internal` |
+| `PROXYSQL_PORT` | ProxySQL server port | `16033` |
+| `PROXYSQL_USER` | ProxySQL username | `proxysql_user` |
+| `PROXYSQL_PASSWORD` | ProxySQL password | *Required* |
+| `ADMIN_USER` | Web interface username | `proxyweb_admin` |
+| `ADMIN_PASSWORD` | Web interface password | *Required* |
+| `SECRET_KEY` | Flask secret key | *Required* |
+
+### Example .env file:
+```bash
+PROXYSQL_HOST=localhost
+PROXYSQL_PORT=6032
+PROXYSQL_USER=radmin
+PROXYSQL_PASSWORD=your_secure_password
+ADMIN_USER=admin
+ADMIN_PASSWORD=your_admin_password
+SECRET_KEY=your_random_secret_key_here
+```
+
+## Security
+
+⚠️ **Important Security Notes:**
+- **Change default credentials** before deployment
+- **Use strong passwords** for both ProxySQL and web interface
+- **Generate a random SECRET_KEY** for Flask sessions
+- **Use environment variables** instead of hardcoded credentials
+- ProxyWeb includes **SQL injection protection** and **input validation**
 
 ---
 
+## Recent Improvements
+
+- ✅ **Enhanced Security**: SQL injection protection, input validation, dangerous operation blocking
+- ✅ **Environment Variable Support**: Secure configuration management
+- ✅ **Docker Health Checks**: Container monitoring and reliability
+- ✅ **Improved Error Handling**: Specific exceptions and better debugging
+- ✅ **Stable Python Version**: Production-ready Python 3.12
+
 ### Features on the roadmap
-- ability to edit tables
-- better input validation
+- Connection pooling for better performance
+- Rate limiting and CSRF protection
+- Table editing capabilities
+- Advanced query builder
+- Audit logging
 
 ---
 ### Credits:

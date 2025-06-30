@@ -1,8 +1,14 @@
-FROM python:3.14.0b1-bookworm
+FROM python:3.12-bookworm
 LABEL maintainer="email@miklos-szel.com"
 
 # Set non-interactive frontend
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Environment variables for configuration
+ENV PROXYSQL_HOST=host.docker.internal
+ENV PROXYSQL_PORT=16033
+ENV PROXYSQL_USER=proxysql_user
+ENV ADMIN_USER=proxyweb_admin
 
 COPY ./requirements.txt /app/requirements.txt
 
@@ -19,6 +25,7 @@ RUN chmod 755 /app/entry.sh
 RUN apt-get update -y && \
     apt-get install -y \
         wget \
+        curl \
         ca-certificates \
         debsums \
         libncurses6 \
@@ -41,6 +48,10 @@ RUN apt-get update -y && \
     rm -f *.deb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb
+
+# Add health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5000/login || exit 1
 
 ENTRYPOINT [ "./entry.sh" ]
 CMD [ "app.py" ]

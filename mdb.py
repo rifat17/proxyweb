@@ -22,7 +22,25 @@ import mysql.connector
 import logging
 import yaml
 import subprocess
+import os
 from datetime import datetime
+
+# Custom exceptions for better error handling
+class ProxyWebError(Exception):
+    """Base exception for ProxyWeb"""
+    pass
+
+class ConfigError(ProxyWebError):
+    """Configuration related errors"""
+    pass
+
+class DatabaseError(ProxyWebError):
+    """Database connection and query errors"""
+    pass
+
+class ValidationError(ProxyWebError):
+    """Input validation errors"""
+    pass
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -30,39 +48,103 @@ sql_get_databases = "show databases"
 sql_show_table_content = "select * from %s.%s order by 1;"
 sql_show_tables = "show tables from %s;"
 
+def validate_sql(sql):
+    """Basic SQL validation to prevent dangerous operations"""
+    if not sql or not sql.strip():
+        raise ValidationError("SQL query cannot be empty")
+    
+    sql_upper = sql.upper().strip()
+    
+    # Block dangerous operations
+    dangerous_patterns = [
+        'DROP ', 'TRUNCATE ', 'DELETE FROM mysql_', 'ALTER ', 'CREATE USER',
+        'GRANT ', 'REVOKE ', 'FLUSH ', 'SHUTDOWN', 'KILL ', '--', '/*', '*/',
+        'UNION SELECT', 'INFORMATION_SCHEMA', 'MYSQL.USER'
+    ]
+    
+    for pattern in dangerous_patterns:
+        if pattern in sql_upper:
+            raise ValidationError(f"Dangerous SQL operation detected: {pattern}")
+    
+    # Limit query length
+    if len(sql) > 5000:
+        raise ValidationError("SQL query too long (max 5000 characters)")
+    
+    return sql.strip()
+
 def get_config(config="config/config.yml"):
     logging.debug("Using file: %s" % (config))
     try:
         with open(config, 'r') as yml:
             cfg = yaml.safe_load(yml)
+        if not cfg:
+            raise ConfigError(f"Config file {config} is empty or invalid")
+        
+        # Override with environment variables
+        _apply_env_overrides(cfg)
         return cfg
+    except FileNotFoundError:
+        raise ConfigError(f"Config file not found: {config}")
+    except yaml.YAMLError as e:
+        raise ConfigError(f"YAML parsing error in {config}: {str(e)}")
     except Exception as e:
-        raise ValueError("Error opening or parsing the file: %" % config)
+        raise ConfigError(f"Error reading config file {config}: {str(e)}")
+
+def _apply_env_overrides(cfg):
+    """Apply environment variable overrides to configuration"""
+    # Database connection overrides
+    if 'PROXYSQL_HOST' in os.environ:
+        cfg['servers']['proxysql']['dsn'][0]['host'] = os.environ['PROXYSQL_HOST']
+    if 'PROXYSQL_PORT' in os.environ:
+        cfg['servers']['proxysql']['dsn'][0]['port'] = os.environ['PROXYSQL_PORT']
+    if 'PROXYSQL_USER' in os.environ:
+        cfg['servers']['proxysql']['dsn'][0]['user'] = os.environ['PROXYSQL_USER']
+    if 'PROXYSQL_PASSWORD' in os.environ:
+        cfg['servers']['proxysql']['dsn'][0]['passwd'] = os.environ['PROXYSQL_PASSWORD']
+    
+    # Authentication overrides
+    if 'ADMIN_USER' in os.environ:
+        cfg['auth']['admin_user'] = os.environ['ADMIN_USER']
+    if 'ADMIN_PASSWORD' in os.environ:
+        cfg['auth']['admin_password'] = os.environ['ADMIN_PASSWORD']
+    
+    # Flask secret key override
+    if 'SECRET_KEY' in os.environ:
+        cfg['flask']['SECRET_KEY'] = os.environ['SECRET_KEY']
 
 
 def db_connect(db, server, autocommit=False, buffered=False, dictionary=True):
     try:
         db['cnf'] = get_config()
+        
+        if server not in db['cnf']['servers']:
+            raise DatabaseError(f"Server '{server}' not found in configuration")
+        
+        if 'dsn' not in db['cnf']['servers'][server] or not db['cnf']['servers'][server]['dsn']:
+            raise DatabaseError(f"No DSN configuration found for server '{server}'")
 
         config = db['cnf']['servers'][server]['dsn'][0]
         logging.debug(db['cnf']['servers'][server]['dsn'][0])
-        db['cnf']['servers'][server]['conn'] = mysql.connector.connect(**config,raise_on_warnings=True, get_warnings=True, connection_timeout=3, )
+        
+        db['cnf']['servers'][server]['conn'] = mysql.connector.connect(
+            **config, raise_on_warnings=True, get_warnings=True, connection_timeout=3
+        )
 
-        if  db['cnf']['servers'][server]['conn'].is_connected():
+        if db['cnf']['servers'][server]['conn'].is_connected():
             logging.debug("Connected successfully to %s as %s db=%s" % (
-                config['host'],
-                config['user'],
-                config['db']))
+                config['host'], config['user'], config['db']))
 
-        db['cnf']['servers'][server]['conn'] .autocommit = autocommit
-        db['cnf']['servers'][server]['conn'] .get_warnings = True
+        db['cnf']['servers'][server]['conn'].autocommit = autocommit
+        db['cnf']['servers'][server]['conn'].get_warnings = True
 
-        db['cnf']['servers'][server]['cur'] = db['cnf']['servers'][server]['conn'].cursor(buffered=buffered,
-                                                                                            dictionary=dictionary)
+        db['cnf']['servers'][server]['cur'] = db['cnf']['servers'][server]['conn'].cursor(
+            buffered=buffered, dictionary=dictionary)
         logging.debug("buffered: %s, dictionary: %s, autocommit: %s" % (buffered, dictionary, autocommit))
 
-    except (mysql.connector.Error, mysql.connector.Warning) as e:
-        raise ValueError(e)
+    except mysql.connector.Error as e:
+        raise DatabaseError(f"MySQL connection error for server '{server}': {str(e)}")
+    except KeyError as e:
+        raise ConfigError(f"Missing configuration key for server '{server}': {str(e)}")
 
 
 def get_all_dbs_and_tables(db, server):
@@ -92,7 +174,13 @@ def get_all_dbs_and_tables(db, server):
         db['cnf']['servers'][server]['cur'].close()
         return all_dbs
     except (mysql.connector.Error, mysql.connector.Warning) as e:
-        raise ValueError(e)
+        raise DatabaseError(f"Database error: {str(e)}")
+    finally:
+        try:
+            if 'cur' in db['cnf']['servers'][server]:
+                db['cnf']['servers'][server]['cur'].close()
+        except:
+            pass
 
 
 def get_table_content(db, server, database, table):
@@ -113,8 +201,13 @@ def get_table_content(db, server, database, table):
         content['misc'] = get_config()['misc']
         return content
     except (mysql.connector.Error, mysql.connector.Warning) as e:
-        db['cnf']['servers'][server]['conn'].close()
-        raise ValueError(e)
+        raise DatabaseError(f"Database error getting table content: {str(e)}")
+    finally:
+        try:
+            if 'conn' in db['cnf']['servers'][server]:
+                db['cnf']['servers'][server]['conn'].close()
+        except:
+            pass
 
 def process_table_content(table, content):
     """
@@ -155,6 +248,7 @@ def execute_adhoc_query(db, server, sql):
     '''returns with a dict with two keys "column_names" = list and  rows = tuples '''
     content = {}
     try:
+        sql = validate_sql(sql)
         logging.debug("server: {} - sql: {}".format(server, sql))
         db_connect(db, server=server, dictionary=False)
 
@@ -167,8 +261,15 @@ def execute_adhoc_query(db, server, sql):
 
         return content
     except (mysql.connector.Error, mysql.connector.Warning) as e:
-        db['cnf']['servers'][server]['conn'].close()
-        raise ValueError(e)
+        raise DatabaseError(f"Database error executing query: {str(e)}")
+    except ValidationError:
+        raise
+    finally:
+        try:
+            if 'conn' in db['cnf']['servers'][server]:
+                db['cnf']['servers'][server]['conn'].close()
+        except:
+            pass
 
 def execute_adhoc_report(db, server):
     '''returns with a dict with two keys "column_names" = list and  rows = tuples '''
@@ -194,46 +295,74 @@ def execute_adhoc_report(db, server):
 
         return adhoc_results
     except (mysql.connector.Error, mysql.connector.Warning) as e:
-        db['cnf']['servers'][server]['conn'].close
-        raise ValueError(e)
+        raise DatabaseError(f"Database error executing report: {str(e)}")
+    finally:
+        try:
+            if 'conn' in db['cnf']['servers'][server]:
+                db['cnf']['servers'][server]['conn'].close()
+        except:
+            pass
 
 
 def get_servers():
-    proxysql_servers = []
     try:
         servers_dict = get_config()
-        for server in servers_dict['servers']:
-            proxysql_servers.append(server)
-        return proxysql_servers
+        if 'servers' not in servers_dict:
+            raise ConfigError("No 'servers' section found in configuration")
+        return list(servers_dict['servers'].keys())
+    except ConfigError:
+        raise
     except Exception as e:
-        raise ValueError("Cannot get the serverlist from the config file")
+        raise ConfigError(f"Cannot get server list from config file: {str(e)}")
 
 def get_read_only(server):
     try:
         config = get_config()
+        if server not in config['servers']:
+            raise ConfigError(f"Server '{server}' not found in configuration")
+        
         if 'read_only' not in config['servers'][server]:
-            read_only = config['global']['read_only']
+            if 'global' in config and 'read_only' in config['global']:
+                return config['global']['read_only']
+            else:
+                return False  # Default to read-write
         else:
-            read_only = config['servers'][server]['read_only']
-        return read_only
-    except:
-        raise ValueError("Cannot get read_only status from the config file")
+            return config['servers'][server]['read_only']
+    except ConfigError:
+        raise
+    except Exception as e:
+        raise ConfigError(f"Cannot get read_only status for server '{server}': {str(e)}")
 
 
 
 def execute_change(db, server, sql):
     try:
+        sql = validate_sql(sql)
         # this is a temporary solution as using the  mysql.connector for certain writes ended up with weird results, ProxySQL
         # is not a MySQL server after all. We're investigating the issue.
         db_connect(db, server=server, dictionary=False)
         logging.debug(sql)
         logging.debug(server)
         dsn = get_config()['servers'][server]['dsn'][0]
-        cmd = ('mysql -h %s -P %s -u %s -p%s main   -e "%s" ' % (dsn['host'], dsn['port'], dsn['user'], dsn['passwd'], sql))
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-
-        return stderr.decode().replace("mysql: [Warning] Using a password on the command line interface can be insecure.\n",'')
-    except (mysql.connector.Error, mysql.connector.Warning) as e:
-        return e
+        cmd = ('mysql -h{} -P{} -u{} -p{} -e "{}"'.format(
+            dsn['host'], dsn['port'], dsn['user'], dsn['passwd'], sql))
+        
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            return "ERROR: " + result.stderr
+        else:
+            return result.stdout
+            
+    except ValidationError as e:
+        return f"VALIDATION ERROR: {str(e)}"
+    except DatabaseError as e:
+        return f"DATABASE ERROR: {str(e)}"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
+    finally:
+        try:
+            db['cnf']['servers'][server]['conn'].close()
+        except:
+            pass
 
